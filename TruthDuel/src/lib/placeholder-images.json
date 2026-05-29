@@ -1,0 +1,16 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "Abstract futuristic network background",
+      "imageUrl": "https://picsum.photos/seed/settler-hero/1200/800",
+      "imageHint": "cyberpunk network"
+    },
+    {
+      "id": "ai-visual",
+      "description": "AI brain or neural network visualization",
+      "imageUrl": "https://picsum.photos/seed/ai-brain/600/400",
+      "imageHint": "artificial intelligence"
+    }
+  ]
+}
