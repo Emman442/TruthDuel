@@ -291,6 +291,46 @@ export function useSettleConsensusBet(bet_id: string) {
     });
 }
 
+export function useJoinConsensusBet() {
+    const contract = useVeriFreeContract();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            bet_id,
+            side,
+            stake
+        }: {
+            bet_id: string;
+            side: string;
+            stake: number;
+        }) => {
+            if (!contract) {
+                throw new Error("Contract not initialized");
+            }
+
+            const receipt = await contract.joinConsensusBet(bet_id, side, stake);
+            console.log("join consensus bet transaction receipt:", receipt);
+            return receipt;
+        },
+
+
+        onSuccess: async (_, variables) => {
+            await queryClient.invalidateQueries({
+                queryKey: ["joined_consensus_bet"],
+            });
+
+            await queryClient.invalidateQueries({
+                queryKey: ["consensus_bets"],
+            });
+        },
+        onError: async (error) => {
+            console.error("Error joining Consensus bet:", error);
+            toast.error("Failed to join consensus bet. Please try again.");
+        }
+    });
+}
+
 
 export function useSettleMutualBet(bet_id: string) {
     const contract = useVeriFreeContract();

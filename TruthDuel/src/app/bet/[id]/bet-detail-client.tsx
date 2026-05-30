@@ -25,15 +25,15 @@ import { MOCK_USER } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { useFetchConsensusBet, useFetchMutualBet, useSettleConsensusBet, useSettleMutualBet, useUserProfile } from '@/lib/hooks/useTruthDuel';
+import { useFetchConsensusBet, useFetchMutualBet, useJoinConsensusBet, useSettleConsensusBet, useSettleMutualBet, useUserProfile } from '@/lib/hooks/useTruthDuel';
 import { formatAddress } from '@/lib/genlayer/wallet';
 
 export default function BetDetailClient({ id }: { id: string }) {
   const isMutual = id.startsWith("mutual_");
-  const isConsensusBet = id.startsWith("consensus_");
+
   const { isPending: isSettlingMutualBet, mutate: settleMutualBet } = useSettleMutualBet(id)
   const { isPending: isSettlingConsensusBet, mutate: settleConsensusBet } = useSettleConsensusBet(id)
-
+  const { isPending: isJoiningConsensusBet, mutate: joinConsensusBet } = useJoinConsensusBet()
 
   const {
     data: mutualBetData,
@@ -48,12 +48,6 @@ export default function BetDetailClient({ id }: { id: string }) {
   const rawBet = isMutual
     ? mutualBetData
     : consensusBetData;
-
-  console.log("ID:", id);
-  console.log("Mutual Data:", mutualBetData);
-  console.log("Consensus Data:", consensusBetData);
-
-
 
   const bet = rawBet
     ? rawBet instanceof Map
@@ -87,10 +81,10 @@ export default function BetDetailClient({ id }: { id: string }) {
   const [settling, setSettling] = useState(false);
   const [accepting, setAccepting] = useState(false);
 
-  const settlement =
-  bet.settlement instanceof Map
-    ? Object.fromEntries(bet.settlement)
-    : bet.settlement;
+  const settlement = bet &&
+    bet?.settlement instanceof Map
+    ? Object.fromEntries(bet?.settlement)
+    : bet?.settlement;
 
   if (isLoadingMutual || isLoadingConsensus) {
     return (
@@ -108,6 +102,24 @@ export default function BetDetailClient({ id }: { id: string }) {
     );
   }
 
+  const handleJoinConsensusBet = async (side: string) => {
+    await joinConsensusBet({ bet_id: id, side: side, stake: Number(bet.min_stake) }, {
+      onSuccess: () => {
+        toast({
+          title: "Stake Successful",
+          description: "You stake on this bet was successful!",
+        });
+      },
+      onError: (error) => {
+        console.error(error)
+        toast({
+          title: "Stake failed",
+          description: "Your stake on this bet was unsuccessful!",
+          variant: 'destructive'
+        });
+      }
+    })
+  }
 
   const handleSettle = async () => {
     try {
@@ -205,7 +217,7 @@ export default function BetDetailClient({ id }: { id: string }) {
     participants.filter(
       (p: any) => p.side === "AGAINST"
     ).length;
-
+  console.log(bet)
   return (
     <div className="min-h-screen pb-20">
       <Navbar />
@@ -407,6 +419,7 @@ export default function BetDetailClient({ id }: { id: string }) {
                     <Button
                       variant="outline"
                       className="h-14 border-success/20 hover:bg-success hover:text-white transition-all text-success font-black text-lg"
+                      onClick={() => handleJoinConsensusBet("FOR")}
                     >
                       STAKE FOR
                     </Button>
@@ -414,6 +427,7 @@ export default function BetDetailClient({ id }: { id: string }) {
                     <Button
                       variant="outline"
                       className="h-14 border-destructive/20 hover:bg-destructive hover:text-white transition-all text-destructive font-black text-lg"
+                      onClick={() => handleJoinConsensusBet("AGAINST")}
                     >
                       STAKE AGAINST
                     </Button>
@@ -429,13 +443,13 @@ export default function BetDetailClient({ id }: { id: string }) {
           <div className="pt-8 border-t border-white/5 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black italic uppercase tracking-tighter">AI Settlement</h2>
-              {!settlement && bet.status === 'active' && (
+              {!settlement.verdict && bet.status === 'active' && (
                 <Button
                   onClick={handleSettle}
                   disabled={
                     isMutual
                       ? isSettlingMutualBet
-                      : isSettlingConsensusBet
+                      : isSettlingConsensusBet || participants.length < 2
                   }
                   className="bg-primary hover:bg-primary/90 text-white neon-border"
                 >
@@ -449,7 +463,7 @@ export default function BetDetailClient({ id }: { id: string }) {
               )}
             </div>
 
-            {settling && (
+            {(isSettlingConsensusBet || isSettlingMutualBet) && (
               <Card className="glass-card animate-pulse border-primary/40">
                 <CardContent className="p-8 text-center space-y-4">
                   <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
@@ -463,7 +477,7 @@ export default function BetDetailClient({ id }: { id: string }) {
               </Card>
             )}
 
-            {settlement && (
+            {bet.status === "settled" && settlement?.verdict && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <Card className={cn(
                   "glass-card border-l-4",
@@ -500,7 +514,7 @@ export default function BetDetailClient({ id }: { id: string }) {
                         Sources Checked
                       </div>
                       <div className="grid grid-cols-1 gap-2">
-                        {settlement.sources.map((source, i) => (
+                        {settlement?.sources_checked?.map((source, i) => (
                           <a
                             key={i}
                             href={source}

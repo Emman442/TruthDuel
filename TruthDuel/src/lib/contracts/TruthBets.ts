@@ -224,7 +224,7 @@ class TruthDuel {
             const txHash = await this.client.writeContract({
                 address: this.contractAddress,
                 functionName: "create_consensus_bet",
-                args: [ description, category, creator_side, creator_stake, min_stake, expiry_timestamp, created_at],
+                args: [description, category, creator_side, creator_stake, min_stake, expiry_timestamp, created_at],
                 value: parseEther(creator_stake.toString()),
             });
 
@@ -258,7 +258,7 @@ class TruthDuel {
                 hash: txHash,
                 status: TransactionStatus.ACCEPTED,
             });
-
+            console.log("Receopttt", receipt)
             return receipt as TransactionReceipt;
         } catch (error) {
             console.error("Error creating consensus bet:", error);
@@ -267,36 +267,74 @@ class TruthDuel {
     }
 
 
-   async settleMutualBet(
-    bet_id: string
-) {
-    await this.client.connect("studionet");
+    async settleMutualBet(
+        bet_id: string
+    ) {
+        await this.client.connect("studionet");
 
-    try {
-        const txHash = await this.client.writeContract({
-            address: this.contractAddress,
-            functionName: "settle_mutual_bet",
-            args: [bet_id],
-            value: BigInt(0),
-        });
-
-        const receipt =
-            await this.client.waitForTransactionReceipt({
-                hash: txHash,
-                status: TransactionStatus.ACCEPTED,
+        try {
+            const txHash = await this.client.writeContract({
+                address: this.contractAddress,
+                functionName: "settle_mutual_bet",
+                args: [bet_id],
+                value: BigInt(0),
             });
 
-        return receipt as TransactionReceipt;
+            const receipt =
+                await this.client.waitForTransactionReceipt({
+                    hash: txHash,
+                    status: TransactionStatus.ACCEPTED,
+                });
+            console.log("Receopttt", receipt)
+            return receipt as TransactionReceipt;
 
-    } catch (error) {
-        console.error(
-            "Error settling mutual bet:",
-            error
-        );
+        } catch (error) {
+            console.error(
+                "Error settling mutual bet:",
+                error
+            );
 
-        throw new Error(
-            "Failed to settle mutual bet"
-        );
+            throw new Error(
+                "Failed to settle mutual bet"
+            );
+        }
+    }
+
+    async joinConsensusBet(
+        bet_id: string,
+        side: string,
+        stake: number
+    ) {
+        await this.client.connect("studionet");
+
+        try {
+            const txHash = await this.client.writeContract({
+                address: this.contractAddress,
+                functionName: "join_consensus_bet",
+                args: [bet_id, side, stake],
+                value: parseEther(stake.toString()),
+            });
+
+            const receipt =
+                await this.client.waitForTransactionReceipt({
+                    hash: txHash,
+                    status: TransactionStatus.ACCEPTED,
+                });
+            console.log("Receipt", receipt)
+            return receipt as TransactionReceipt;
+
+        } catch (error) {
+            console.error(
+                "Error joining consensus bet:",
+                error
+            );
+
+            throw new Error(
+                "Failed to join consensus bet"
+            );
+        }
     }
 }
-}
+
+
+export default TruthDuel
