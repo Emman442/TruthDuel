@@ -155,10 +155,6 @@ class BetSettler(gl.Contract):
         assert 2 <= len(new_username) <= 30, "Username must be 2-30 chars"
         self.users[wallet_address].username = new_username
 
-    # @gl.public.view
-    # def get_user(self, wallet_address: str) -> User:
-    #     assert wallet_address in self.users, "User not found"
-    #     return gl.storage.copy_to_memory(self.users[wallet_address])
 
     @gl.public.view
     def get_user(self, identifier: str) -> User:
