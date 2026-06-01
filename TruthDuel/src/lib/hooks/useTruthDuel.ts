@@ -367,3 +367,42 @@ export function useSettleMutualBet(bet_id: string) {
         }
     });
 }
+
+
+export function useAcceptMutualBet(bet_id: string) {
+    const contract = useVeriFreeContract();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            bet_id,
+            creator_stake
+        }: {
+            bet_id: string;
+            creator_stake: number
+        }) => {
+            if (!contract) {
+                throw new Error("Contract not initialized");
+            }
+
+            const receipt = await contract.acceptMutualChallenge(bet_id, creator_stake);
+            console.log("Acceot Mutual Transaction Receipt:", receipt);
+            return receipt;
+        },
+
+
+        onSuccess: async (_, variables) => {
+            await queryClient.invalidateQueries({
+                queryKey: ["accepted_mutual_bet"],
+            });
+
+            await queryClient.invalidateQueries({
+                queryKey: ["mutual_bets"],
+            });
+        },
+        onError: async (error) => {
+            console.error("Error accepting mutual bets:", error);
+            toast.error("Failed to settle mutual bet. Please try again.");
+        }
+    });
+}

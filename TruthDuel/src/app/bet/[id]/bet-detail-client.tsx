@@ -70,11 +70,12 @@ export default function BetDetailClient({ id }: { id: string }) {
   const { data: mutualChallenger } = useUserProfile(bet?.challenger)
 
 
-  const mutualChallengerProfile = creatorProfile
-    ? mutualChallenger instanceof Map
-      ? Object.fromEntries(mutualChallenger)
-      : creatorProfile
-    : null;
+  const mutualChallengerProfile =
+    mutualChallenger
+      ? mutualChallenger instanceof Map
+        ? Object.fromEntries(mutualChallenger)
+        : mutualChallenger
+      : null;
 
   const { toast } = useToast();
 
@@ -217,7 +218,13 @@ export default function BetDetailClient({ id }: { id: string }) {
     participants.filter(
       (p: any) => p.side === "AGAINST"
     ).length;
-  console.log(bet)
+  console.log("bet: ", bet)
+  console.log({
+  status: bet.status,
+  settlement,
+  challenger: bet.challenger,
+  isMutual,
+});
   return (
     <div className="min-h-screen pb-20">
       <Navbar />
@@ -304,7 +311,7 @@ export default function BetDetailClient({ id }: { id: string }) {
               </Card>
 
               <Card className={cn("glass-card", !bet.challenger && "border-dashed border-primary/20 bg-primary/5")}>
-                {bet.challenger ? (
+                {bet.status !== "pending" ? (
                   <>
                     <CardHeader className="pb-2">
                       <p className="text-[10px] text-muted-foreground uppercase font-bold">Challenger 2</p>
@@ -443,12 +450,12 @@ export default function BetDetailClient({ id }: { id: string }) {
           <div className="pt-8 border-t border-white/5 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black italic uppercase tracking-tighter">AI Settlement</h2>
-              {!settlement.verdict && bet.status === 'active' && (
+              {!settlement?.verdict && (bet.status === 'active' || bet.status==='pending') && (
                 <Button
                   onClick={handleSettle}
                   disabled={
                     isMutual
-                      ? isSettlingMutualBet
+                      ? isSettlingMutualBet || !bet.challenger
                       : isSettlingConsensusBet || participants.length < 2
                   }
                   className="bg-primary hover:bg-primary/90 text-white neon-border"

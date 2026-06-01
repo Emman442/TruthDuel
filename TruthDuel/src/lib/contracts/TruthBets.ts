@@ -334,6 +334,41 @@ class TruthDuel {
             );
         }
     }
+
+
+    async acceptMutualChallenge(
+        bet_id: string,
+        creator_stake: number
+    ) {
+        await this.client.connect("studionet");
+
+        try {
+            const txHash = await this.client.writeContract({
+                address: this.contractAddress,
+                functionName: "accept_mutual_bet",
+                args: [bet_id],
+                value: parseEther(creator_stake.toString()),
+            });
+
+            const receipt =
+                await this.client.waitForTransactionReceipt({
+                    hash: txHash,
+                    status: TransactionStatus.ACCEPTED,
+                });
+            console.log("Receipt", receipt)
+            return receipt as TransactionReceipt;
+
+        } catch (error) {
+            console.error(
+                "Error accepting mutual bet:",
+                error
+            );
+
+            throw new Error(
+                "Failed to accept mutual bet"
+            );
+        }
+    }
 }
 
 
