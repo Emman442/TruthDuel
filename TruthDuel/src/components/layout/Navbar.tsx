@@ -45,7 +45,7 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Explore', href: '/explore', icon: Compass },
-    { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
+    // { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   ];
 

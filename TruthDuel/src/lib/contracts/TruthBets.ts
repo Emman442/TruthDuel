@@ -257,6 +257,8 @@ class TruthDuel {
             const receipt = await this.client.waitForTransactionReceipt({
                 hash: txHash,
                 status: TransactionStatus.ACCEPTED,
+                retries: 60,
+                interval: 5000,
             });
             console.log("Receopttt", receipt)
             return receipt as TransactionReceipt;
@@ -284,6 +286,8 @@ class TruthDuel {
                 await this.client.waitForTransactionReceipt({
                     hash: txHash,
                     status: TransactionStatus.ACCEPTED,
+                    retries: 24,
+                    interval: 5000,
                 });
             console.log("Receopttt", receipt)
             return receipt as TransactionReceipt;

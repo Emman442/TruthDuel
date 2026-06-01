@@ -196,7 +196,7 @@ export function useCreateMutualBet() {
             });
 
             await queryClient.invalidateQueries({
-                queryKey: ["mutual_bets"],
+                queryKey: ["mutual_bet"],
             });
         },
         onError: async (error) => {
@@ -276,12 +276,9 @@ export function useSettleConsensusBet(bet_id: string) {
 
 
         onSuccess: async (_, variables) => {
+    
             await queryClient.invalidateQueries({
-                queryKey: ["consensus_bet_settled"],
-            });
-
-            await queryClient.invalidateQueries({
-                queryKey: ["consensus_bets"],
+                queryKey: ["consensus_bet"],
             });
         },
         onError: async (error) => {
@@ -347,18 +344,14 @@ export function useSettleMutualBet(bet_id: string) {
             }
 
             const receipt = await contract.settleMutualBet(bet_id);
-            console.log("Consensus bet settlement transaction receipt:", receipt);
+            console.log("Mutual bet settlement transaction receipt:", receipt);
             return receipt;
         },
 
 
         onSuccess: async (_, variables) => {
             await queryClient.invalidateQueries({
-                queryKey: ["mutual_bet_settled"],
-            });
-
-            await queryClient.invalidateQueries({
-                queryKey: ["mutual_bets"],
+                queryKey: ["mutual_bet"],
             });
         },
         onError: async (error) => {
@@ -393,16 +386,16 @@ export function useAcceptMutualBet(bet_id: string) {
 
         onSuccess: async (_, variables) => {
             await queryClient.invalidateQueries({
-                queryKey: ["accepted_mutual_bet"],
+                queryKey: ["accepted_mutual_bet"],  
             });
 
             await queryClient.invalidateQueries({
-                queryKey: ["mutual_bets"],
+                queryKey: ["mutual_bet"],
             });
         },
         onError: async (error) => {
             console.error("Error accepting mutual bets:", error);
-            toast.error("Failed to settle mutual bet. Please try again.");
+            toast.error("Failed to accept mutual bet. Please try again.");
         }
     });
 }

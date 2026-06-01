@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,11 +20,10 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import Link from 'next/link';
-import { MOCK_USER } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { useFetchConsensusBet, useFetchMutualBet, useJoinConsensusBet, useSettleConsensusBet, useSettleMutualBet, useUserProfile } from '@/lib/hooks/useTruthDuel';
+import { useAcceptMutualBet, useFetchConsensusBet, useFetchMutualBet, useJoinConsensusBet, useSettleConsensusBet, useSettleMutualBet, useUserProfile } from '@/lib/hooks/useTruthDuel';
 import { formatAddress } from '@/lib/genlayer/wallet';
 
 export default function BetDetailClient({ id }: { id: string }) {
@@ -34,7 +32,7 @@ export default function BetDetailClient({ id }: { id: string }) {
   const { isPending: isSettlingMutualBet, mutate: settleMutualBet } = useSettleMutualBet(id)
   const { isPending: isSettlingConsensusBet, mutate: settleConsensusBet } = useSettleConsensusBet(id)
   const { isPending: isJoiningConsensusBet, mutate: joinConsensusBet } = useJoinConsensusBet()
-
+  const { isPending: isAcceptingChallenge, mutate: acceptChallenge } = useAcceptMutualBet(id)
   const {
     data: mutualBetData,
     isLoading: isLoadingMutual,
@@ -79,9 +77,6 @@ export default function BetDetailClient({ id }: { id: string }) {
 
   const { toast } = useToast();
 
-  const [settling, setSettling] = useState(false);
-  const [accepting, setAccepting] = useState(false);
-
   const settlement = bet &&
     bet?.settlement instanceof Map
     ? Object.fromEntries(bet?.settlement)
@@ -122,63 +117,76 @@ export default function BetDetailClient({ id }: { id: string }) {
     })
   }
 
-  const handleSettle = async () => {
+  const handleSettle = () => {
+    if (!bet) return;
+
     try {
       if (isMutual) {
         settleMutualBet({ bet_id: id }, {
           onSuccess: () => {
             toast({
-              title: "Bet settled",
-              description: "Mutual bet settled successfully.",
+              title: "Bet Settled Successfully",
+              description: "Mutual bet has been settled by AI.",
             });
           },
           onError: (error) => {
-            console.error(error);
-
+            console.error("Settlement failed:", error);
             toast({
-              title: "Settlement failed",
-              description: "Unable to settle mutual bet.",
+              title: "Settlement Failed",
+              description: error.message || "Something went wrong. Please try again.",
               variant: "destructive",
             });
-          },
+          }
         });
-
-        return;
+      } else {
+        settleConsensusBet({ bet_id: id }, {
+          onSuccess: () => {
+            toast({
+              title: "Bet Settled Successfully",
+              description: "Consensus bet has been settled by AI.",
+            });
+          },
+          onError: (error) => {
+            console.error("Settlement failed:", error);
+            toast({
+              title: "Settlement Failed",
+              description: error.message || "Something went wrong. Please try again.",
+              variant: "destructive",
+            });
+          }
+        });
       }
 
-      settleConsensusBet({ bet_id: id }, {
-        onSuccess: () => {
-          toast({
-            title: "Bet settled",
-            description: "Consensus bet settled successfully.",
-          });
-        },
-        onError: (error) => {
-          console.error(error);
-
-          toast({
-            title: "Settlement failed",
-            description: "Unable to settle consensus bet.",
-            variant: "destructive",
-          });
-        },
+    } catch (error: any) {
+      console.error("Settlement failed:", error);
+      toast({
+        title: "Settlement Failed",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
       });
+    };
 
-    } catch (error) {
-      console.error(error);
-    }
-  };
+
+  }
 
   const handleAcceptChallenge = async () => {
-    setAccepting(true);
-    // Simulate smart contract interaction
-    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    toast({
-      title: "Challenge Accepted!",
-      description: `You have successfully staked ${Number(bet.creator_stake)} GEN. Funds are now locked in escrow.`,
-    });
-    setAccepting(false);
+    acceptChallenge({ bet_id: id, creator_stake: Number(bet.creator_stake) }, {
+      onSuccess: () => {
+        toast({
+          title: "Challenge Accepted!",
+          description: `You have successfully staked ${Number(bet.creator_stake)} GEN. Funds are now locked in escrow.`,
+        });
+      }, onError: (error) => {
+        console.error(error);
+        toast({
+          title: "Failed to Accept Challenge",
+          description: "There was an issue accepting the challenge. Please try again.",
+          variant: "destructive",
+        });
+      }
+    })
+
   };
 
   const expiryDate = new Date(Number(bet.expiry_timestamp));
@@ -220,11 +228,11 @@ export default function BetDetailClient({ id }: { id: string }) {
     ).length;
   console.log("bet: ", bet)
   console.log({
-  status: bet.status,
-  settlement,
-  challenger: bet.challenger,
-  isMutual,
-});
+    status: bet.status,
+    settlement,
+    challenger: bet.challenger,
+    isMutual,
+  });
   return (
     <div className="min-h-screen pb-20">
       <Navbar />
@@ -341,10 +349,10 @@ export default function BetDetailClient({ id }: { id: string }) {
                     </div>
                     <Button
                       onClick={handleAcceptChallenge}
-                      disabled={accepting}
+                      disabled={isAcceptingChallenge || !bet.challenger}
                       className="bg-primary hover:bg-primary/90 text-white neon-border w-full max-w-[200px]"
                     >
-                      {accepting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                      {isAcceptingChallenge ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
                       Accept Challenge
                     </Button>
                   </CardContent>
@@ -450,7 +458,7 @@ export default function BetDetailClient({ id }: { id: string }) {
           <div className="pt-8 border-t border-white/5 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black italic uppercase tracking-tighter">AI Settlement</h2>
-              {!settlement?.verdict && (bet.status === 'active' || bet.status==='pending') && (
+              {!settlement?.verdict && (bet.status === 'active' || bet.status === 'pending') && (
                 <Button
                   onClick={handleSettle}
                   disabled={
