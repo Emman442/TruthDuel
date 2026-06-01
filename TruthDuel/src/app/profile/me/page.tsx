@@ -32,10 +32,12 @@ export default function ProfilePage() {
     )
   }
 
-  const userProfileObj = Object.fromEntries(userProfile);
+  const userProfileObj = userProfile
+  ? Object.fromEntries(userProfile)
+  : null;
   console.log(userProfileObj)
 
-  const user_accuracy = userProfileObj.total_bets > 0 ? ((userProfileObj.total_won / userProfileObj.total_bets) * 100).toFixed(2) + "%" : "0%";
+  const user_accuracy = userProfileObj && userProfileObj.total_bets > 0 ? ((userProfileObj.total_won / userProfileObj.total_bets) * 100).toFixed(2) + "%" : "0%";
   return (
     <div className="min-h-screen pb-20">
       <Navbar />

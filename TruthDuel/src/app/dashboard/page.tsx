@@ -72,12 +72,12 @@ export default function DashboardPage() {
               <div className="mt-8">
                 <TabsContent value="my-bets" className="mt-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {MOCK_BETS.map(bet => <BetCard key={bet.id} bet={bet} />)}
+                    {/* {MOCK_BETS.map(bet => <BetCard key={bet.id} bet={bet} />)} */}
                   </div>
                 </TabsContent>
                 <TabsContent value="created" className="mt-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {MOCK_BETS.filter(b => b.creator.id === MOCK_USER.id).map(bet => <BetCard key={bet.id} bet={bet} />)}
+                    {/* {MOCK_BETS.filter(b => b.creator.id === MOCK_USER.id).map(bet => <BetCard key={bet.id} bet={bet} />)} */}
                   </div>
                 </TabsContent>
                 <TabsContent value="settled" className="mt-0">
