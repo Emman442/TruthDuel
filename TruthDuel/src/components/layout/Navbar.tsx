@@ -1,17 +1,17 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Wallet,
   Trophy,
   Compass,
   PlusCircle,
   LayoutDashboard,
+  Zap,           // Changed from Lightbulb
   Menu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Sheet,
   SheetContent,
@@ -20,7 +20,6 @@ import {
   SheetTrigger
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { MOCK_USER } from '@/lib/mock-data';
 import { useEffect, useState } from 'react';
 import LoginButton from './loginButton';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -29,47 +28,58 @@ import { HashLoader } from 'react-spinners';
 import { useCheckIfProfileExists } from '@/lib/hooks/useTruthDuel';
 import { toast } from 'sonner';
 import ProfileSetupModal from '../ui/ProfileSetupModal';
+import HowItWorksModal from '../ui/HowItWorks';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const { wallets, ready } = useWallets();
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
+  const router = useRouter()
+  const { wallets } = useWallets();
   const { logout } = usePrivy();
   const [hasChecked, setHasChecked] = useState(false);
   const [showSetupModal, setShowSetupModal] = useState(false);
+
   const embeddedWallet = wallets[0];
   const address = embeddedWallet?.address;
-  const { isLoading, data: profileExists } = useCheckIfProfileExists(address);
-  console.log(profileExists)
 
+  const { isLoading, data: profileExists } = useCheckIfProfileExists(address);
 
   const navLinks = [
     { name: 'Explore', href: '/explore', icon: Compass },
     // { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    // { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'How it Works', href: '#', icon: Zap, onClick: () => setHowItWorksOpen(true) },
   ];
 
   const NavItems = ({ className, onClick }: { className?: string; onClick?: () => void }) => (
     <div className={cn("flex items-center gap-1", className)}>
       {navLinks.map((link) => (
-        <Link key={link.href} href={link.href} onClick={onClick}>
-          <Button
-            variant="ghost"
-            className={cn(
-              "gap-2 w-full justify-start md:w-auto",
-              pathname === link.href && "bg-primary/10 text-primary"
-            )}
-          >
-            <link.icon className="w-4 h-4" />
-            {link.name}
-          </Button>
-        </Link>
+        <Button
+          key={link.name}
+          variant="ghost"
+          className={cn(
+            "gap-2 w-full justify-start md:w-auto",
+            pathname === link.href && "bg-primary/10 text-primary"
+          )}
+          onClick={() => {
+            if (link.onClick) {
+              link.onClick();
+            } else {
+              router.push(link.href);
+            }
+
+            onClick?.();
+          }}
+        >
+          <link.icon className="w-4 h-4" />
+          {link.name}
+        </Button>
       ))}
     </div>
   );
 
-
-  // Run check whenever address changes
+  // Profile check logic
   useEffect(() => {
     if (!address) {
       setHasChecked(false);
@@ -77,27 +87,22 @@ export default function Navbar() {
       return;
     }
 
-    // Wait for loading to finish
-    if (isLoading) return;
-
-    // Only run once per address
-    if (hasChecked) return;
+    if (isLoading || hasChecked) return;
 
     setHasChecked(true);
 
-    if (profileExists) {
+    if (!profileExists) {
+      setShowSetupModal(true);
+    } else {
       toast.success("Welcome back!", {
         description: `${address.slice(0, 6)}...${address.slice(-4)}`,
       });
-    } else {
-      setShowSetupModal(true);
     }
   }, [address, isLoading, profileExists, hasChecked]);
 
-
-
   return (
     <>
+      {/* Loading Modal */}
       <Modal
         isOpen={!!address && isLoading}
         onClose={() => { }}
@@ -108,25 +113,31 @@ export default function Navbar() {
           <HashLoader size={40} color="#3C83F6" />
           <div className="text-center space-y-1">
             <p className="text-sm font-bold text-white">Checking your profile</p>
-            <p className="text-xs text-muted-foreground">
-              Connecting to GenLayer...
-            </p>
+            <p className="text-xs text-muted-foreground">Connecting to GenLayer...</p>
           </div>
         </div>
       </Modal>
 
-      {isLoading == false && <ProfileSetupModal
-        isOpen={showSetupModal}
-        onClose={() => setShowSetupModal(false)}
-        address={address || ""}
-        onProfileCreated={() => {
-          toast.success("Profile created!", {
-            description: "Welcome to TruthDuel!",
-          });
-          setShowSetupModal(false);
-        }}
-      />}
+      {/* How it Works Modal */}
+      <HowItWorksModal
+        isOpen={howItWorksOpen}
+        onClose={() => setHowItWorksOpen(false)}
+      />
 
+      {/* Profile Setup Modal */}
+      {isLoading === false && (
+        <ProfileSetupModal
+          isOpen={showSetupModal}
+          onClose={() => setShowSetupModal(false)}
+          address={address || ""}
+          onProfileCreated={() => {
+            toast.success("Profile created!", {
+              description: "Welcome to TruthDuel!",
+            });
+            setShowSetupModal(false);
+          }}
+        />
+      )}
 
       <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
@@ -159,10 +170,7 @@ export default function Navbar() {
             </Sheet>
 
             <Link href="/" className="flex items-center gap-2">
-              {/* <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="font-bold text-white text-xl tracking-tighter">BS</span>
-              </div> */}
-              <span className="text-xl font-bold tracking-tight hidden sm:block">
+              <span className="text-xl font-bold tracking-tight">
                 Truth<span className="text-primary">Duel</span>
               </span>
             </Link>
@@ -173,7 +181,7 @@ export default function Navbar() {
             <NavItems />
           </div>
 
-          {/* Right Side - Wallet / Login */}
+          {/* Right Side */}
           <div className="flex items-center gap-3">
             {address ? (
               <>
@@ -184,21 +192,9 @@ export default function Navbar() {
                   </Button>
                 </Link>
 
-                <Link href="/profile/me">
-                  <Avatar className="w-9 h-9 border border-primary/20 hover:border-primary cursor-pointer">
-                    <AvatarImage src={MOCK_USER.avatar} />
-                    <AvatarFallback>BS</AvatarFallback>
-                  </Avatar>
-                </Link>
-
                 <Button variant="outline" className="hidden lg:flex gap-2">
                   <Wallet className="w-4 h-4" />
                   {address.slice(0, 6)}...{address.slice(-4)}
-                </Button>
-                <Button variant="outline" className="hidden lg:flex gap-2" onClick={async () => {
-                  await logout();
-                }}>
-                  logout
                 </Button>
               </>
             ) : (

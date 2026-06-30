@@ -23,8 +23,6 @@ export default function LoginButton() {
             });
             if (isNewUser) {
                 console.log("This is a new user");
-            }else{
-                alert(`Welcome back, ${user.email?.address || "user"}!`);
             }
         },
     });

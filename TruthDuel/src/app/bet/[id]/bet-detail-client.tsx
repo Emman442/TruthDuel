@@ -28,7 +28,7 @@ import { formatAddress } from '@/lib/genlayer/wallet';
 
 export default function BetDetailClient({ id }: { id: string }) {
   const isMutual = id.startsWith("mutual_");
-
+  const isDisabled=true
   const { isPending: isSettlingMutualBet, mutate: settleMutualBet } = useSettleMutualBet(id)
   const { isPending: isSettlingConsensusBet, mutate: settleConsensusBet } = useSettleConsensusBet(id)
   const { isPending: isJoiningConsensusBet, mutate: joinConsensusBet } = useJoinConsensusBet()
@@ -532,13 +532,18 @@ export default function BetDetailClient({ id }: { id: string }) {
                         {settlement?.sources_checked?.map((source, i) => (
                           <a
                             key={i}
-                            href={source}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-xs border border-white/5"
+                            href={isDisabled ? undefined : source}           // ← important
+                            target={isDisabled ? undefined : "_blank"}
+                            rel={isDisabled ? undefined : "noopener noreferrer"}
+                            onClick={isDisabled ? (e) => e.preventDefault() : undefined}
+                            className={`flex items-center justify-between p-3 rounded-lg text-xs border transition-all
+    ${isDisabled
+                                ? 'bg-white/5 border-white/10 text-muted-foreground opacity-50 cursor-not-allowed pointer-events-none'
+                                : 'bg-white/5 hover:bg-white/10 border-white/5 active:scale-[0.985]'
+                              }`}
                           >
                             <span className="truncate max-w-[90%]">{source}</span>
-                            <ExternalLink className="w-3 h-3" />
+                            <ExternalLink className={`w-3 h-3 ${isDisabled ? 'opacity-40' : ''}`} />
                           </a>
                         ))}
                       </div>
@@ -552,9 +557,9 @@ export default function BetDetailClient({ id }: { id: string }) {
                           <p className="text-sm font-bold">{totalPool} GEN released to winners</p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" className="text-xs h-8 border-white/10">
+                      {/* <Button variant="outline" size="sm" className="text-xs h-8 border-white/10">
                         View Tx on Genlayer Explorer
-                      </Button>
+                      </Button> */}
                     </div>
                   </CardContent>
                 </Card>

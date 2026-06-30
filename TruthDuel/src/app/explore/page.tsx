@@ -34,16 +34,17 @@ export default function ExplorePage() {
   console.log("Mutual Bets:", mutualBetsData);
   console.log("Consensus Bets:", consensusBetsData);
 
+
   const mutualBets = Array.from(mutualBetsData?.values() || []).map(
-    (bet) => ({
-      ...Object.fromEntries(bet),
-      betType: "MUTUAL" as const,
-    })
-  );
+  (bet) => ({
+    ...bet,                       // ← just spread the object
+    betType: "MUTUAL" as const,
+  })
+);
 
   const consensusBets = Array.from(consensusBetsData?.values() || []).map(
     (bet) => ({
-      ...Object.fromEntries(bet),
+      ...bet,
       betType: "CONSENSUS" as const,
     })
   );
@@ -158,8 +159,8 @@ export default function ExplorePage() {
 
           {/* Bet Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 pt-4">
-            {normalizedBets.length > 0 ? (
-              normalizedBets.map(bet => (
+            {filteredBets.length > 0 ? (
+              filteredBets.map(bet => (
                 <BetCard key={bet.bet_id} bet={bet} />
               ))
             ) : (

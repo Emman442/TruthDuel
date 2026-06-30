@@ -36,9 +36,7 @@ export default function BetCard({ bet }: BetCardProps) {
 
 
   const { data: creatorProfile, } = useUserProfile(bet.creator.toString())
-  const creator = creatorProfile
-    ? Object.fromEntries(creatorProfile)
-    : null;
+  const creator = creatorProfile ?? null; 
 
   const isEndingSoon = new Date(Number(bet.expiry_timestamp)).getTime() - Date.now() < 24 * 60 * 60 * 1000;
 
@@ -75,7 +73,7 @@ export default function BetCard({ bet }: BetCardProps) {
             {/* <AvatarImage src={bet.creator.avatar} /> */}
             <AvatarFallback>{creator?.username[0]}</AvatarFallback>
           </Avatar>
-          <span className="text-xs text-muted-foreground">@{creator?.username}</span>
+          <span className="text-xs text-muted-foreground">{creator?.username}</span>
         </div>
 
         {bet.mode === 'CONSENSUS' && (
@@ -115,7 +113,7 @@ export default function BetCard({ bet }: BetCardProps) {
           <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Stake Pool</span>
           <div className="flex items-center gap-1">
             <Wallet className="w-3 h-3 text-primary" />
-            <span className="text-sm font-bold">{bet.totalPool.toLocaleString()} <span className="text-muted-foreground text-[10px]">GEN</span></span>
+            <span className="text-sm font-bold">{bet?.totalPool} <span className="text-muted-foreground text-[10px]">GEN</span></span>
           </div>
         </div>
         <Link href={`/bet/${bet.bet_id}`}>

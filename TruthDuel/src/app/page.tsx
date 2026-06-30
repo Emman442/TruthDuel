@@ -28,10 +28,33 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useFetchMutualBet, useFetchMutualBets } from '@/lib/hooks/useTruthDuel';
 
 export default function LandingPage() {
   const heroImg = PlaceHolderImages.find(img => img.id === 'hero-bg');
   const aiImg = PlaceHolderImages.find(img => img.id === 'ai-visual');
+  const {isPending: isLoadingBets,data: bets} = useFetchMutualBets()
+  const mutualBets = Array.from(bets?.values() || []).map(
+  (bet) => ({
+    ...bet,                       // ← just spread the object
+    betType: "MUTUAL" as const,
+  })
+);
+
+
+   const normalizedBets = [
+    ...mutualBets.map(bet => {
+      console.log("mutual", bet.creator_stake, bet.challenger_stake);
+
+      return {
+        ...bet,
+        mode: "MUTUAL" as const,
+        totalPool:
+          Number(bet.creator_stake ?? 0) +
+          Number(bet.challenger_stake ?? 0),
+      };
+    }),
+  ]
 
   const stats = [
     { label: 'Total Bets Settled', value: '12,402', icon: CheckCircle2 },
@@ -230,9 +253,9 @@ export default function LandingPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {/* {MOCK_BETS.slice(0, 3).map((bet) => (
-                <BetCard key={bet.id} bet={bet} />
-              ))} */}
+              {normalizedBets?.slice(0, 3).map((bet) => (
+                <BetCard key={bet.bet_id} bet={bet} />
+              ))}
             </div>
           </div>
         </section>
@@ -240,7 +263,7 @@ export default function LandingPage() {
 
       <footer className="border-t border-white/5 py-12 bg-background">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest italic">© 2024 TruthDuel AI. Fully Decentralized.</p>
+          <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest italic">© 2026 TruthDuel AI. Fully Decentralized.</p>
         </div>
       </footer>
 
