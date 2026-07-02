@@ -270,13 +270,12 @@ export function useSettleConsensusBet(bet_id: string) {
             }
 
             const receipt = await contract.settleConsensusBet(bet_id);
+
             console.log("Consensus bet settlement transaction receipt:", receipt);
             return receipt;
         },
 
-
         onSuccess: async (_, variables) => {
-    
             await queryClient.invalidateQueries({
                 queryKey: ["consensus_bet"],
             });

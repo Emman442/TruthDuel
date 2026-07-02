@@ -88,14 +88,6 @@ class BetSettler(gl.Contract):
 
     def __init__(self):
         self.bet_counter = i32(0)
-        self.users = TreeMap()
-        self.mutual_bets = TreeMap()
-        self.consensus_bets = TreeMap()
-        self.user_mutual_bets = TreeMap()
-        self.user_consensus_bets = TreeMap()
-        self.mutual_bet_ids = DynArray[str]()
-        self.consensus_bet_ids = DynArray[str]()
-        self.username_to_wallet = TreeMap()
 
     def _empty_settlement(self) -> SettlementResult:
         return SettlementResult(
@@ -155,6 +147,10 @@ class BetSettler(gl.Contract):
         assert 2 <= len(new_username) <= 30, "Username must be 2-30 chars"
         self.users[wallet_address].username = new_username
 
+    # @gl.public.view
+    # def get_user(self, wallet_address: str) -> User:
+    #     assert wallet_address in self.users, "User not found"
+    #     return gl.storage.copy_to_memory(self.users[wallet_address])
 
     @gl.public.view
     def get_user(self, identifier: str) -> User:
@@ -265,41 +261,45 @@ class BetSettler(gl.Contract):
         creator_username = self.users[creator].username
         challenger_username = self.users[challenger].username
 
-        # Step 1 — strict consensus on the verdict only
+        # Step 1 — verdict
         def get_verdict() -> str:
             prompt = f"""
-You are an impartial AI judge settling a bet between two people.
+    You are an impartial AI judge settling a bet between two people.
 
-Bet description: "{description}"
+    Bet description: "{description}"
 
-The creator ({creator_username}) made this claim or prediction in the bet description above.
-The challenger ({challenger_username}) took the opposing side.
+    The creator ({creator_username}) made this claim or prediction in the bet description above.
+    The challenger ({challenger_username}) took the opposing side.
 
-Use your trained knowledge to determine the outcome.
+    Use your trained knowledge to determine the outcome.
 
-Reply with ONLY one of these exact strings, nothing else:
-creator_wins
-challenger_wins
-draw
-unresolved
+    Reply with ONLY one of these exact strings, nothing else:
+    creator_wins
+    challenger_wins
+    draw
+    unresolved
 
-Rules:
-- creator_wins = the claim in the bet description came true
-- challenger_wins = the claim in the bet description did NOT come true
-- draw = genuinely ambiguous outcome
-- unresolved = event has genuinely not happened yet as of today June 2026
-- Be decisive. Only return unresolved if the event is still in the future.
-"""
+    Rules:
+    - creator_wins = the claim in the bet description came true
+    - challenger_wins = the claim in the bet description did NOT come true
+    - draw = genuinely ambiguous outcome
+    - unresolved = event has genuinely not happened yet as of today June 2026
+    - Be decisive. Only return unresolved if the event is still in the future.
+    """
             return gl.nondet.exec_prompt(prompt).strip().lower().strip('"')
 
-        verdict = gl.eq_principle.strict_eq(get_verdict)
+        verdict = gl.eq_principle.prompt_non_comparative(
+            get_verdict,
+            task="Determine the outcome of a bet between two people",
+            criteria="Reply with exactly one of: creator_wins, challenger_wins, draw, unresolved. The verdict must reflect whether the creator's claim came true based on real-world knowledge."
+        )
         verdict = verdict.strip().strip('"').lower()
 
         if verdict == "unresolved":
             self.mutual_bets[bet_id].status = "active"
             return
 
-        # Step 2 — get reasoning separately
+        # Step 2 — reasoning
         def get_reasoning() -> str:
             prompt = f"""
     A bet between two people was just settled.
@@ -320,7 +320,7 @@ Rules:
             criteria="The explanation must be consistent with the verdict and factually grounded"
         )
 
-        # Step 3 — store settlement and update status
+        # Step 3 — store and update
         sources: DynArray[str] = []
         sources.append("GenLayer AI validators - trained knowledge")
 
@@ -348,7 +348,6 @@ Rules:
             half = u256(bet.creator_stake) * u256(10**18)
             _Recipient(Address(creator)).emit_transfer(value=half)
             _Recipient(Address(challenger)).emit_transfer(value=half)
-
 
 
     @gl.public.write.payable
@@ -436,7 +435,7 @@ Rules:
         self.consensus_bets[bet_id].status = "awaiting_settlement"
         description = bet.description
 
-        # Step 1 — strict consensus on the verdict only
+        # Step 1 — verdict
         def get_verdict() -> str:
             prompt = f"""
     You are an impartial AI judge settling a public prediction market bet.
@@ -459,14 +458,18 @@ Rules:
     """
             return gl.nondet.exec_prompt(prompt).strip().lower().strip('"')
 
-        verdict = gl.eq_principle.strict_eq(get_verdict)
+        verdict = gl.eq_principle.prompt_non_comparative(
+            get_verdict,
+            task="Determine the outcome of a prediction market bet",
+            criteria="Reply with exactly one of: for_wins, against_wins, draw, unresolved. The verdict must reflect whether the prediction came true based on real-world knowledge."
+        )
         verdict = verdict.strip().strip('"').lower()
 
         if verdict == "unresolved":
             self.consensus_bets[bet_id].status = "active"
             return
 
-        # Step 2 — get reasoning separately
+        # Step 2 — reasoning
         def get_reasoning() -> str:
             prompt = f"""
     A prediction market bet was just settled.
@@ -485,7 +488,7 @@ Rules:
             criteria="The explanation must be consistent with the verdict and factually grounded"
         )
 
-        # Step 3 — store settlement and update status
+        # Step 3 — store and update
         sources: DynArray[str] = []
         sources.append("GenLayer AI validators - trained knowledge")
 
@@ -517,6 +520,10 @@ Rules:
                 refund = u256(participant.stake_gen) * u256(10**18)
                 _Recipient(Address(participant.wallet_address)).emit_transfer(value=refund)
      
+
+
+
+
 
 
 

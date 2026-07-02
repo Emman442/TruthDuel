@@ -73,7 +73,7 @@ export default function BetCard({ bet }: BetCardProps) {
             {/* <AvatarImage src={bet.creator.avatar} /> */}
             <AvatarFallback>{creator?.username[0]}</AvatarFallback>
           </Avatar>
-          <span className="text-xs text-muted-foreground">{creator?.username}</span>
+          <span className="text-xs text-muted-foreground">@{creator?.username}</span>
         </div>
 
         {bet.mode === 'CONSENSUS' && (

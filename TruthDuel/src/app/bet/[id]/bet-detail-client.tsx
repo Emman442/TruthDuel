@@ -25,10 +25,13 @@ import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAcceptMutualBet, useFetchConsensusBet, useFetchMutualBet, useJoinConsensusBet, useSettleConsensusBet, useSettleMutualBet, useUserProfile } from '@/lib/hooks/useTruthDuel';
 import { formatAddress } from '@/lib/genlayer/wallet';
+import { useWallets } from '@privy-io/react-auth';
 
 export default function BetDetailClient({ id }: { id: string }) {
   const isMutual = id.startsWith("mutual_");
-  const isDisabled=true
+  const { wallets } = useWallets();
+  const currentUserAddress = wallets[0]?.address || "";
+  const isDisabled = true
   const { isPending: isSettlingMutualBet, mutate: settleMutualBet } = useSettleMutualBet(id)
   const { isPending: isSettlingConsensusBet, mutate: settleConsensusBet } = useSettleConsensusBet(id)
   const { isPending: isJoiningConsensusBet, mutate: joinConsensusBet } = useJoinConsensusBet()
@@ -75,7 +78,51 @@ export default function BetDetailClient({ id }: { id: string }) {
         : mutualChallenger
       : null;
 
+  const isCurrentChallenger =
+    currentUserAddress &&
+    bet?.challenger &&
+    currentUserAddress.toLowerCase() === bet.challenger.toString().toLowerCase();
   const { toast } = useToast();
+
+const challengerAddress = bet?.challenger?.toString();
+
+  const expiryDate = new Date(Number(bet?.expiry_timestamp));
+  const isEndingSoon = expiryDate.getTime() - Date.now() < 24 * 60 * 60 * 1000;
+const isExpired = Date.now() >= expiryDate.getTime();
+
+// 3. Strict participant check (lowercase comparison to prevent hex string mismatches)
+const normalizedUser = currentUserAddress?.toLowerCase();
+const isParticipant =
+  !!normalizedUser &&
+  (normalizedUser === creatorAddress?.toLowerCase() ||
+   normalizedUser === challengerAddress?.toLowerCase());
+
+  
+const isCreator = normalizedUser && normalizedUser === creatorAddress?.toLowerCase();
+const isChallenger = normalizedUser && normalizedUser === challengerAddress?.toLowerCase();
+
+ const participants =
+    bet.participants?.map((p: any) =>
+      p instanceof Map
+        ? Object.fromEntries(p)
+        : p
+    ) ?? [];
+
+// 2. Check if the user has joined a Consensus pool side
+const isPoolParticipant = participants.some(
+  (p: any) => p.account?.toString().toLowerCase() === normalizedUser
+);
+
+// 4. Combined Rule: MUST be an active duel, MUST be expired, MUST be a participant
+const isAuthorizedToSettle = isMutual 
+  ? (isCreator || isChallenger)     // Only the 2 duelers for mutual
+  : (isCreator || isPoolParticipant); // Anyone in the pools for consensus
+
+// 4. Update the final combined rule
+const canTriggerSettlement = 
+  bet?.status === "active" && 
+  isExpired && 
+  isAuthorizedToSettle;
 
   const settlement = bet &&
     bet?.settlement instanceof Map
@@ -189,11 +236,6 @@ export default function BetDetailClient({ id }: { id: string }) {
 
   };
 
-  const expiryDate = new Date(Number(bet.expiry_timestamp));
-
-  const isEndingSoon =
-    expiryDate.getTime() - Date.now()
-    < 24 * 60 * 60 * 1000;
 
   const isConsensus =
     "for_pool" in bet;
@@ -210,12 +252,6 @@ export default function BetDetailClient({ id }: { id: string }) {
     ? Number(bet.against_pool)
     : 0;
 
-  const participants =
-    bet.participants?.map((p: any) =>
-      p instanceof Map
-        ? Object.fromEntries(p)
-        : p
-    ) ?? [];
 
   const forParticipants =
     participants.filter(
@@ -347,14 +383,18 @@ export default function BetDetailClient({ id }: { id: string }) {
                       <p className="font-bold text-muted-foreground mb-1">Awaiting Challenger...</p>
                       <p className="text-xs text-muted-foreground">Stake {Number(bet.creator_stake)} GEN to enter</p>
                     </div>
-                    <Button
-                      onClick={handleAcceptChallenge}
-                      disabled={isAcceptingChallenge || !bet.challenger}
-                      className="bg-primary hover:bg-primary/90 text-white neon-border w-full max-w-[200px]"
-                    >
-                      {isAcceptingChallenge ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                      Accept Challenge
-                    </Button>
+
+                    {/* Only render if the logged-in user is the designated challenger */}
+                    {isCurrentChallenger && (
+                      <Button
+                        onClick={handleAcceptChallenge}
+                        disabled={isAcceptingChallenge}
+                        className="bg-primary hover:bg-primary/90 text-white neon-border w-full max-w-[200px]"
+                      >
+                        {isAcceptingChallenge ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                        Accept Challenge
+                      </Button>
+                    )}
                   </CardContent>
                 )}
               </Card>
@@ -458,7 +498,7 @@ export default function BetDetailClient({ id }: { id: string }) {
           <div className="pt-8 border-t border-white/5 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black italic uppercase tracking-tighter">AI Settlement</h2>
-              {!settlement?.verdict && (bet.status === 'active' || bet.status === 'pending') && (
+              {!settlement?.verdict && (bet.status === 'active' || bet.status === 'pending') && canTriggerSettlement && (
                 <Button
                   onClick={handleSettle}
                   disabled={

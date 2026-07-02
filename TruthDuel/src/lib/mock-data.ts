@@ -51,9 +51,9 @@ export const MOCK_BETS: Bet[] = [
 ];
 
 export const MOCK_ACTIVITIES: Activity[] = [
-  { id: 'a1', message: 'ETH bet settled — @chidera wins 200 USDC ✓', status: 'WIN', timestamp: '2 mins ago' },
-  { id: 'a2', message: 'Arsenal vs Chelsea — @emmanuel loses 50 USDC ✗', status: 'LOSS', timestamp: '5 mins ago' },
-  { id: 'a3', message: 'BTC $100k bet — awaiting settlement ⏳', status: 'PENDING', timestamp: '10 mins ago' }
+  { id: 'a1', message: 'ETH bet settled - @chidera wins 20 GEN ✓', status: 'WIN', timestamp: '2 mins ago' },
+  { id: 'a2', message: 'Arsenal vs Chelsea - @emmanuel loses 50 GEN ✗', status: 'LOSS', timestamp: '5 mins ago' },
+  { id: 'a3', message: 'BTC $100k bet - awaiting settlement ⏳', status: 'PENDING', timestamp: '10 mins ago' }
 ];
 
 export const MOCK_LEADERBOARD: LeaderboardEntry[] = [

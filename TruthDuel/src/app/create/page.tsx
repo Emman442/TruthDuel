@@ -184,7 +184,7 @@ export default function CreateBetPage() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs font-black uppercase tracking-widest text-primary/70">Challenger Wallet/Name</Label>
-                      <Input placeholder="0x... or @username" className="bg-background border-primary/20 h-12" onChange={(e) => setChallenger(e.target.value)} />
+                      <Input placeholder="0x..." className="bg-background border-primary/20 h-12" onChange={(e) => setChallenger(e.target.value)} />
                     </div>
                   </div>
                 )}

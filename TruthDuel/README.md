@@ -439,3 +439,4 @@ for more robust settlements.
 # Built On GenLayer
 
 TruthDuel leverages GenLayer Intelligent Contracts to create prediction markets that can reason about real-world events and reach consensus on outcomes without relying on centralized oracles.
+# truthduel-client

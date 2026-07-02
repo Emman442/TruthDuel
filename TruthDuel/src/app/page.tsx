@@ -71,7 +71,7 @@ export default function LandingPage() {
     },
     {
       title: 'Stake & Lock',
-      desc: 'Your USDC is held in a trustless smart contract on the Arc network until expiration.',
+      desc: 'Your GEN tokens is held in a trustless smart contract on the Genlayer network until expiration.',
       icon: Lock,
       color: 'bg-blue-500/20 text-blue-500'
     },

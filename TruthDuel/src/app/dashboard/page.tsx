@@ -21,7 +21,7 @@ export default function DashboardPage() {
     { label: 'Active Bets', value: '3', icon: Clock, color: 'text-blue-500' },
     { label: 'Total Won', value: '$1,240', icon: Trophy, color: 'text-success' },
     { label: 'Win Rate', value: '72%', icon: TrendingUp, color: 'text-primary' },
-    { label: 'Wallet Balance', value: `${MOCK_USER.balance} USDC`, icon: Wallet, color: 'text-white' },
+    { label: 'Wallet Balance', value: `${MOCK_USER.balance} GEN`, icon: Wallet, color: 'text-white' },
   ];
 
   return (
