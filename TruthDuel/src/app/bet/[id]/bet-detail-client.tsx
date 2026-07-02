@@ -102,7 +102,7 @@ const isCreator = normalizedUser && normalizedUser === creatorAddress?.toLowerCa
 const isChallenger = normalizedUser && normalizedUser === challengerAddress?.toLowerCase();
 
  const participants =
-    bet.participants?.map((p: any) =>
+    bet?.participants?.map((p: any) =>
       p instanceof Map
         ? Object.fromEntries(p)
         : p

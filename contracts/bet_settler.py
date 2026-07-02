@@ -571,12 +571,3 @@ class BetSettler(gl.Contract):
         for bet_id in self.consensus_bet_ids:
             result.append(gl.storage.copy_to_memory(self.consensus_bets[bet_id]))
         return result
-    @gl.public.write
-    def test_transfer(self) -> None:
-        wallet = Address(str(gl.message.sender_address))
-
-        _Recipient(
-            wallet
-        ).emit_transfer(
-            value=u256(1) * u256(10**18)
-        )
